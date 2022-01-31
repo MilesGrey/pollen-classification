@@ -8,10 +8,10 @@ from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader
 from torchmetrics import Precision, Recall, F1Score
 from torchvision.transforms import ToTensor, Compose, Resize, RandomRotation, RandomHorizontalFlip, \
-    RandomVerticalFlip, RandomResizedCrop, RandomApply
+    RandomVerticalFlip, RandomResizedCrop, RandomApply, Normalize
 
 from src.data.load_augsburg import AugsburgClassificationDataset, Mode
-from src.data.augmentation import SquarePad
+from src.data.augmentation import SquarePad, AdditiveWhiteGaussianNoise
 
 
 class Classifier(LightningModule):
@@ -57,9 +57,9 @@ class Classifier(LightningModule):
         self.train_precision(predictions, targets)
         self.train_recall(predictions, targets)
         self.train_f1_score(predictions, targets)
-        self.log('train_precision', self.train_precision, on_step=True, on_epoch=True, prog_bar=True)
-        self.log('train_recall', self.train_recall, on_step=True, on_epoch=True, prog_bar=True)
-        self.log('train_f1_score', self.train_f1_score, on_step=True, on_epoch=True, prog_bar=True)
+        self.log('train_precision', self.train_precision, on_step=False, on_epoch=True, prog_bar=True)
+        self.log('train_recall', self.train_recall, on_step=False, on_epoch=True, prog_bar=True)
+        self.log('train_f1_score', self.train_f1_score, on_step=False, on_epoch=True, prog_bar=True)
 
         return loss
 
@@ -69,9 +69,9 @@ class Classifier(LightningModule):
         self.validation_precision(predictions, targets)
         self.validation_recall(predictions, targets)
         self.validation_f1_score(predictions, targets)
-        self.log('validation_precision', self.validation_precision, on_step=True, on_epoch=True, prog_bar=True)
-        self.log('validation_recall', self.validation_recall, on_step=True, on_epoch=True, prog_bar=True)
-        self.log('validation_f1_score', self.validation_f1_score, on_step=True, on_epoch=True, prog_bar=True)
+        self.log('validation_precision', self.validation_precision, on_step=False, on_epoch=True, prog_bar=True)
+        self.log('validation_recall', self.validation_recall, on_step=False, on_epoch=True, prog_bar=True)
+        self.log('validation_f1_score', self.validation_f1_score, on_step=False, on_epoch=True, prog_bar=True)
 
     def test_step(self, batch, batch_idx):
         images, targets = batch
@@ -79,9 +79,9 @@ class Classifier(LightningModule):
         self.test_precision(predictions, targets)
         self.test_recall(predictions, targets)
         self.test_f1_score(predictions, targets)
-        self.log('test_precision', self.test_precision, on_step=True, on_epoch=True, prog_bar=True)
-        self.log('test_recall', self.test_recall, on_step=True, on_epoch=True, prog_bar=True)
-        self.log('test_f1_score', self.test_f1_score, on_step=True, on_epoch=True, prog_bar=True)
+        self.log('test_precision', self.test_precision, on_step=False, on_epoch=True, prog_bar=True)
+        self.log('test_recall', self.test_recall, on_step=False, on_epoch=True, prog_bar=True)
+        self.log('test_f1_score', self.test_f1_score, on_step=False, on_epoch=True, prog_bar=True)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=0.0001)
@@ -98,10 +98,10 @@ class Classifier(LightningModule):
                 RandomRotation(self.dataset.AUGMENTATION_PARAMETERS['rotation_range']),
                 RandomHorizontalFlip(),
                 RandomVerticalFlip(),
-                # AdditiveWhiteGaussianNoise(
-                #     mean=self.dataset.AUGMENTATION_PARAMETERS['noise_mean'],
-                #     standard_deviation=self.dataset.AUGMENTATION_PARAMETERS['noise_standard_deviation']
-                # )
+                AdditiveWhiteGaussianNoise(
+                    mean=self.dataset.AUGMENTATION_PARAMETERS['noise_mean'],
+                    standard_deviation=self.dataset.AUGMENTATION_PARAMETERS['noise_standard_deviation']
+                )
             ],
             p=self.dataset.AUGMENTATION_PARAMETERS['application_probability']
         )
@@ -114,6 +114,7 @@ class Classifier(LightningModule):
                 SquarePad(),
                 Resize(self.dataset.IMAGE_SIZE),
                 self._build_data_augmentation_pipeline(),
+                Normalize(mean=self.IMAGE_NET_MEAN, std=self.IMAGE_NET_STANDARD_DEVIATION)
             ])
         )
         return DataLoader(
@@ -132,6 +133,7 @@ class Classifier(LightningModule):
                 ToTensor(),
                 SquarePad(),
                 Resize(self.dataset.IMAGE_SIZE),
+                Normalize(mean=self.IMAGE_NET_MEAN, std=self.IMAGE_NET_STANDARD_DEVIATION)
             ])
         )
         return DataLoader(

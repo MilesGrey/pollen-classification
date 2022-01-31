@@ -24,7 +24,7 @@ class AugsburgClassificationDataset(Dataset, ABC):
         'crop_scale': (0.7, 0.9),
         'crop_ratio': (1., 1.),
         'rotation_range': 45,
-        'noise_standard_deviation': 15.,
+        'noise_standard_deviation': 15. / 255.,
         'noise_mean': 0.,
         'application_probability': 0.25
     }
