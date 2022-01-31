@@ -4,7 +4,7 @@ import torch
 from pytorch_lightning import LightningModule
 from pytorch_lightning.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADERS, STEP_OUTPUT
 from torch import tensor, Tensor
-from torch.nn import CrossEntropyLoss
+from torch.nn import CrossEntropyLoss, ModuleDict
 from torch.utils.data import DataLoader
 from torchmetrics import Precision, Recall, Metric, F1Score
 from torchvision.transforms import ToTensor, Compose, Resize, RandomRotation, RandomHorizontalFlip, \
@@ -31,23 +31,23 @@ class Classifier(LightningModule):
 
         self.dataset = dataset
 
-        class_weights = tensor(dataset.CLASS_WEIGHTS, device=self.device)
-        self.calculate_loss = CrossEntropyLoss(weight=class_weights)
+        self.class_weights = tensor(dataset.CLASS_WEIGHTS)
+        self.calculate_loss = CrossEntropyLoss(weight=self.class_weights)
 
         # TODO: Add confusion matrix logging or maybe just do once in the end?
-        validation_metrics: Dict[str, Metric] = {
-            'validation_precision': Precision(num_classes=dataset.NUM_CLASSES, average='macro').to(self.device),
-            'validation_recall': Recall(num_classes=dataset.NUM_CLASSES, average='macro').to(self.device),
-            'validation_f1': F1Score(num_classes=dataset.NUM_CLASSES, average='macro').to(self.device),
-        }
-        test_metrics: Dict[str, Metric] = {
-            'test_precision': Precision(num_classes=dataset.NUM_CLASSES, average='macro').to(self.device),
-            'test_recall': Recall(num_classes=dataset.NUM_CLASSES, average='macro').to(self.device),
-            'test_f1': F1Score(num_classes=dataset.NUM_CLASSES, average='macro').to(self.device),
-        }
-        self.metrics: Dict[Mode, Dict[str, Metric]] = {
-            Mode.VALIDATION: validation_metrics,
-            Mode.TEST: test_metrics
+        self.validation_metrics: ModuleDict[str, Metric] = ModuleDict({
+            'validation_precision': Precision(num_classes=dataset.NUM_CLASSES, average='macro'),
+            'validation_recall': Recall(num_classes=dataset.NUM_CLASSES, average='macro'),
+            'validation_f1': F1Score(num_classes=dataset.NUM_CLASSES, average='macro'),
+        })
+        self.test_metrics: ModuleDict[str, Metric] = ModuleDict({
+            'test_precision': Precision(num_classes=dataset.NUM_CLASSES, average='macro'),
+            'test_recall': Recall(num_classes=dataset.NUM_CLASSES, average='macro'),
+            'test_f1': F1Score(num_classes=dataset.NUM_CLASSES, average='macro'),
+        })
+        self.metrics: Dict[Mode, ModuleDict[str, Metric]] = {
+            Mode.VALIDATION: self.validation_metrics,
+            Mode.TEST: self.test_metrics
         }
 
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
