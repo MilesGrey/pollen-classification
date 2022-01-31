@@ -36,14 +36,14 @@ class Classifier(LightningModule):
 
         # TODO: Add confusion matrix logging or maybe just do once in the end?
         validation_metrics: Dict[str, Metric] = {
-            'validation_precision': Precision(num_classes=dataset.NUM_CLASSES, average='macro'),
-            'validation_recall': Recall(num_classes=dataset.NUM_CLASSES, average='macro'),
-            'validation_f1': F1Score(num_classes=dataset.NUM_CLASSES, average='macro'),
+            'validation_precision': Precision(num_classes=dataset.NUM_CLASSES, average='macro').to(self.device),
+            'validation_recall': Recall(num_classes=dataset.NUM_CLASSES, average='macro').to(self.device),
+            'validation_f1': F1Score(num_classes=dataset.NUM_CLASSES, average='macro').to(self.device),
         }
         test_metrics: Dict[str, Metric] = {
-            'test_precision': Precision(num_classes=dataset.NUM_CLASSES, average='macro'),
-            'test_recall': Recall(num_classes=dataset.NUM_CLASSES, average='macro'),
-            'test_f1': F1Score(num_classes=dataset.NUM_CLASSES, average='macro'),
+            'test_precision': Precision(num_classes=dataset.NUM_CLASSES, average='macro').to(self.device),
+            'test_recall': Recall(num_classes=dataset.NUM_CLASSES, average='macro').to(self.device),
+            'test_f1': F1Score(num_classes=dataset.NUM_CLASSES, average='macro').to(self.device),
         }
         self.metrics: Dict[Mode, Dict[str, Metric]] = {
             Mode.VALIDATION: validation_metrics,
