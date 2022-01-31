@@ -6,7 +6,7 @@ from pytorch_lightning.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADER
 from torch import tensor, Tensor
 from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader
-from torchmetrics import Precision, Recall, F1, Metric
+from torchmetrics import Precision, Recall, Metric, F1Score
 from torchvision.transforms import ToTensor, Compose, Resize, RandomRotation, RandomHorizontalFlip, \
     RandomVerticalFlip, RandomResizedCrop, RandomApply, Normalize
 
@@ -38,12 +38,12 @@ class Classifier(LightningModule):
         validation_metrics: Dict[str, Metric] = {
             'validation_precision': Precision(num_classes=dataset.NUM_CLASSES, average='macro'),
             'validation_recall': Recall(num_classes=dataset.NUM_CLASSES, average='macro'),
-            'validation_f1': F1(num_classes=dataset.NUM_CLASSES, average='macro'),
+            'validation_f1': F1Score(num_classes=dataset.NUM_CLASSES, average='macro'),
         }
         test_metrics: Dict[str, Metric] = {
             'test_precision': Precision(num_classes=dataset.NUM_CLASSES, average='macro'),
             'test_recall': Recall(num_classes=dataset.NUM_CLASSES, average='macro'),
-            'test_f1': F1(num_classes=dataset.NUM_CLASSES, average='macro'),
+            'test_f1': F1Score(num_classes=dataset.NUM_CLASSES, average='macro'),
         }
         self.metrics: Dict[Mode, Dict[str, Metric]] = {
             Mode.VALIDATION: validation_metrics,
@@ -124,7 +124,6 @@ class Classifier(LightningModule):
             transforms=Compose([
                 ToTensor(),
                 SquarePad(),
-                lambda image: image / 255.,
                 Resize((256, 256)),
                 Normalize(mean=self.IMAGE_NET_MEAN, std=self.IMAGE_NET_STANDARD_DEVIATION)
             ])
