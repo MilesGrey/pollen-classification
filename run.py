@@ -14,7 +14,7 @@ def get_git_revision_short_hash() -> str:
 if __name__ == '__main__':
     model = TimmClassifier(
         model=TimmModel.MOBILE_NET_V3,
-        batch_size=16,
+        batch_size=32,
         dataset=Augsburg15ClassificationDataset
     )
 

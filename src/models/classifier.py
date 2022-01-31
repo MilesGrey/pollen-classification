@@ -115,7 +115,8 @@ class Classifier(LightningModule):
             batch_size=self.batch_size,
             drop_last=True,
             shuffle=True,
-            num_workers=4
+            num_workers=4,
+            prefetch_factor=4
         )
 
     def val_dataloader(self) -> EVAL_DATALOADERS:
@@ -132,7 +133,8 @@ class Classifier(LightningModule):
             validation_dataset,
             batch_size=self.batch_size,
             drop_last=True,
-            num_workers=4
+            num_workers=4,
+            prefetch_factor=4
         )
 
     def test_dataloader(self) -> EVAL_DATALOADERS:
