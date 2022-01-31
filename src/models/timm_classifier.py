@@ -8,7 +8,7 @@ from src.models.classifier import Classifier
 
 
 class TimmModel(Enum):
-    EFFICIENT_NET_V2 = 'tf_efficientnetv2_s_in21ft1k'
+    EFFICIENT_NET_V2 = 'tf_efficientnetv2_b0'
     MOBILE_NET_V3 = 'mobilenetv3_large_100_miil'
     RESNET_50 = 'resnet50'
 
