@@ -8,10 +8,10 @@ from torch.nn import CrossEntropyLoss, ModuleDict
 from torch.utils.data import DataLoader
 from torchmetrics import Precision, Recall, Metric, F1Score
 from torchvision.transforms import ToTensor, Compose, Resize, RandomRotation, RandomHorizontalFlip, \
-    RandomVerticalFlip, RandomResizedCrop, RandomApply, Normalize
+    RandomVerticalFlip, RandomResizedCrop, RandomApply
 
 from src.data.load_augsburg import AugsburgClassificationDataset, Mode
-from src.data.augmentation import SquarePad, AdditiveWhiteGaussianNoise
+from src.data.augmentation import SquarePad
 
 
 class Classifier(LightningModule):
@@ -95,7 +95,7 @@ class Classifier(LightningModule):
         metric_results: Dict[str, Tensor] = {}
         for name, metric in self.metrics[mode].items():
             result = metric(predictions, targets)
-            self.log(name, result, on_epoch=True, batch_size=self.batch_size)
+            self.log(name, result, on_epoch=True, batch_size=self.batch_size, prog_bar=True)
             metric_results[name] = result
         return metric_results
 
