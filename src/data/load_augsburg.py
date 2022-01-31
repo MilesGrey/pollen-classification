@@ -199,7 +199,7 @@ class Augsburg31ClassificationDataset(AugsburgClassificationDataset):
         'Spores',
         'NoPollen',
     ]
-    CLASS_WEIGHTS: [float] = {
+    CLASS_WEIGHTS: List[float] = [
         11668 / 10063,
         11668 / 12,
         11668 / 76,
@@ -231,5 +231,5 @@ class Augsburg31ClassificationDataset(AugsburgClassificationDataset):
         11668 / 2829,
         11668 / 86,
         11668 / 578
-    }
+    ]
     NUM_CLASSES = 31
