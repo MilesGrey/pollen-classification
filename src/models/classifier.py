@@ -1,12 +1,12 @@
-from typing import List, Optional, Type, Dict
+from typing import List, Type
 
 import torch
 from pytorch_lightning import LightningModule
 from pytorch_lightning.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADERS, STEP_OUTPUT
-from torch import tensor, Tensor
-from torch.nn import CrossEntropyLoss, ModuleDict
+from torch import tensor
+from torch.nn import CrossEntropyLoss
 from torch.utils.data import DataLoader
-from torchmetrics import Precision, Recall, Metric, F1Score
+from torchmetrics import Precision, Recall, F1Score
 from torchvision.transforms import ToTensor, Compose, Resize, RandomRotation, RandomHorizontalFlip, \
     RandomVerticalFlip, RandomResizedCrop, RandomApply
 
@@ -35,20 +35,17 @@ class Classifier(LightningModule):
         self.calculate_loss = CrossEntropyLoss(weight=self.class_weights)
 
         # TODO: Add confusion matrix logging or maybe just do once in the end?
-        self.validation_metrics: ModuleDict[str, Metric] = ModuleDict({
-            'validation_precision': Precision(num_classes=dataset.NUM_CLASSES, average='macro'),
-            'validation_recall': Recall(num_classes=dataset.NUM_CLASSES, average='macro'),
-            'validation_f1': F1Score(num_classes=dataset.NUM_CLASSES, average='macro'),
-        })
-        self.test_metrics: ModuleDict[str, Metric] = ModuleDict({
-            'test_precision': Precision(num_classes=dataset.NUM_CLASSES, average='macro'),
-            'test_recall': Recall(num_classes=dataset.NUM_CLASSES, average='macro'),
-            'test_f1': F1Score(num_classes=dataset.NUM_CLASSES, average='macro'),
-        })
-        self.metrics: Dict[Mode, ModuleDict[str, Metric]] = {
-            Mode.VALIDATION: self.validation_metrics,
-            Mode.TEST: self.test_metrics
-        }
+        self.train_precision = Precision(num_classes=dataset.NUM_CLASSES, average='macro')
+        self.train_recall = Recall(num_classes=dataset.NUM_CLASSES, average='macro')
+        self.train_f1_score = F1Score(num_classes=dataset.NUM_CLASSES, average='macro')
+
+        self.validation_precision = Precision(num_classes=dataset.NUM_CLASSES, average='macro')
+        self.validation_recall = Recall(num_classes=dataset.NUM_CLASSES, average='macro')
+        self.validation_f1_score = F1Score(num_classes=dataset.NUM_CLASSES, average='macro')
+
+        self.test_precision = Precision(num_classes=dataset.NUM_CLASSES, average='macro')
+        self.test_recall = Recall(num_classes=dataset.NUM_CLASSES, average='macro')
+        self.test_f1_score = F1Score(num_classes=dataset.NUM_CLASSES, average='macro')
 
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
         images, targets = batch
@@ -56,17 +53,35 @@ class Classifier(LightningModule):
         predictions = self(images)
         loss = self.calculate_loss(predictions, targets)
         self.log('train_loss', loss, on_step=True, batch_size=self.batch_size)
+
+        self.train_precision(predictions, targets)
+        self.train_recall(predictions, targets)
+        self.train_f1_score(predictions, targets)
+        self.log('train_precision', self.train_precision, on_step=True, on_epoch=True, prog_bar=True)
+        self.log('train_recall', self.train_recall, on_step=True, on_epoch=True, prog_bar=True)
+        self.log('train_f1_score', self.train_f1_score, on_step=True, on_epoch=True, prog_bar=True)
+
         return loss
 
-    def validation_step(self, batch, batch_idx) -> Optional[STEP_OUTPUT]:
+    def validation_step(self, batch, batch_idx):
         images, targets = batch
         predictions = self(images)
-        return self._calculate_metrics(predictions, targets, Mode.VALIDATION)
+        self.validation_precision(predictions, targets)
+        self.validation_recall(predictions, targets)
+        self.validation_f1_score(predictions, targets)
+        self.log('validation_precision', self.validation_precision, on_step=True, on_epoch=True, prog_bar=True)
+        self.log('validation_recall', self.validation_recall, on_step=True, on_epoch=True, prog_bar=True)
+        self.log('validation_f1_score', self.validation_f1_score, on_step=True, on_epoch=True, prog_bar=True)
 
-    def test_step(self, batch, batch_idx) -> Optional[STEP_OUTPUT]:
+    def test_step(self, batch, batch_idx):
         images, targets = batch
         predictions = self(images)
-        return self._calculate_metrics(predictions, targets, Mode.TEST)
+        self.test_precision(predictions, targets)
+        self.test_recall(predictions, targets)
+        self.test_f1_score(predictions, targets)
+        self.log('test_precision', self.test_precision, on_step=True, on_epoch=True, prog_bar=True)
+        self.log('test_recall', self.test_recall, on_step=True, on_epoch=True, prog_bar=True)
+        self.log('test_f1_score', self.test_f1_score, on_step=True, on_epoch=True, prog_bar=True)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=0.0001)
@@ -90,14 +105,6 @@ class Classifier(LightningModule):
             ],
             p=self.dataset.AUGMENTATION_PARAMETERS['application_probability']
         )
-
-    def _calculate_metrics(self, predictions, targets, mode):
-        metric_results: Dict[str, Tensor] = {}
-        for name, metric in self.metrics[mode].items():
-            result = metric(predictions, targets)
-            self.log(name, result, on_epoch=True, batch_size=self.batch_size, prog_bar=True)
-            metric_results[name] = result
-        return metric_results
 
     def train_dataloader(self) -> TRAIN_DATALOADERS:
         train_dataset = self.dataset(
