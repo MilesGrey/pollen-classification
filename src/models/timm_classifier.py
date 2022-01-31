@@ -29,6 +29,5 @@ class TimmClassifier(Classifier):
             num_classes=dataset.NUM_CLASSES
         )
 
-    def forward(self, batch, batch_idx) -> Any:
-        images, _ = batch
+    def forward(self, images) -> Any:
         return self.model(images)
