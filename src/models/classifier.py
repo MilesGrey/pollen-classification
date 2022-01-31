@@ -83,10 +83,10 @@ class Classifier(LightningModule):
                 RandomRotation(self.dataset.AUGMENTATION_PARAMETERS['rotation_range']),
                 RandomHorizontalFlip(),
                 RandomVerticalFlip(),
-                AdditiveWhiteGaussianNoise(
-                    mean=self.dataset.AUGMENTATION_PARAMETERS['noise_mean'],
-                    standard_deviation=self.dataset.AUGMENTATION_PARAMETERS['noise_standard_deviation']
-                )
+                # AdditiveWhiteGaussianNoise(
+                #     mean=self.dataset.AUGMENTATION_PARAMETERS['noise_mean'],
+                #     standard_deviation=self.dataset.AUGMENTATION_PARAMETERS['noise_standard_deviation']
+                # )
             ],
             p=self.dataset.AUGMENTATION_PARAMETERS['application_probability']
         )
@@ -107,7 +107,6 @@ class Classifier(LightningModule):
                 SquarePad(),
                 Resize(self.dataset.IMAGE_SIZE),
                 self._build_data_augmentation_pipeline(),
-                Normalize(mean=self.IMAGE_NET_MEAN, std=self.IMAGE_NET_STANDARD_DEVIATION)
             ])
         )
         return DataLoader(
@@ -125,8 +124,7 @@ class Classifier(LightningModule):
             transforms=Compose([
                 ToTensor(),
                 SquarePad(),
-                Resize((256, 256)),
-                Normalize(mean=self.IMAGE_NET_MEAN, std=self.IMAGE_NET_STANDARD_DEVIATION)
+                Resize(self.dataset.IMAGE_SIZE),
             ])
         )
         return DataLoader(
